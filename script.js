@@ -25,3 +25,34 @@ const todoAccordion = taskContainersList[0];
 const todoAccordionBody = todoAccordion.querySelector(".task-list-content-container");
 todoAccordionBody.style.maxHeight = `${todoAccordionBody.scrollHeight}px`;
 todoAccordionBody.classList.remove("closed-accordion");
+
+
+
+// 
+const searchButton = document.querySelector('.search-container >span');
+const filterButton = document.querySelector('.filter-container >span');
+
+// const searchInput = document.getElementById('search-task-input');
+// const filterStatusInput = document.getElementById('task-category-dropdown');
+// const filterPriorityInput = document.getElementById('task-priority-dropdown');
+
+searchButton.addEventListener("click", (event)=> {
+    if(searchInput.classList.contains('shrunk')) {
+        searchInput.classList.remove('shrunk');
+        searchInput.focus();
+    }
+})
+searchInput.addEventListener("blur", (event)=> {
+    if (searchInput.value==='') {
+        searchInput.classList.add('shrunk');
+    }
+})
+filterButton.addEventListener("click", (event)=> {
+    filterStatusInput.classList.toggle('shrunk');
+    filterPriorityInput.classList.toggle('shrunk');
+})
+
+searchInput.addEventListener('input', displayFilteredSearchedCards);
+filterStatusInput.addEventListener('change', displayFilteredSearchedCards);
+filterPriorityInput.addEventListener('change', displayFilteredSearchedCards);
+

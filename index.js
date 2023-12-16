@@ -84,7 +84,7 @@ function saveCard(cardId, cardTitle, cardElement, cardStatus, cardPriority, upda
     if (cardStatus.localeCompare('todo') === 0) {
         targetArrayRef = todoCardsArray;
     }
-    else if (cardStatus.localeCompare('in-progress')) {
+    else if (cardStatus.localeCompare('in-progress') === 0) {
         targetArrayRef = progressCardsArray;
     }
     else {
@@ -93,16 +93,38 @@ function saveCard(cardId, cardTitle, cardElement, cardStatus, cardPriority, upda
 
     let cardObject;
     let cardIndex;
-    // find if card priority, or title is being updated
+
+    // find if card priority, or status is being updated
     if (update) {
         console.info('updating');
-        cardObject = targetArrayRef.find((element) => {
-            return (element.id.localeCompare(cardId.toString()) === 0);
-        })
-        cardIndex = targetArrayRef.indexOf(cardObject);
+        
+        // find the previous status, and previous array of the card
+        let previousArray;
 
-        targetArrayRef.splice(cardIndex, 1);
+        cardObject = todoCardsArray.find((element) => {
+            return (element.id === cardId);
+        })
+        previousArray = todoCardsArray;
+
+        if (!cardObject) {
+            cardObject = progressCardsArray.find((element) => {
+                return (element.id.localeCompare(cardId) === 0);
+            })
+            previousArray = progressCardsArray;
+        }
+        if (!cardObject) {
+            cardObject = completedCardsArray.find((element)=> {
+                return (element.id === cardId);
+            });
+            previousArray = completedCardsArray;
+        }
+
+        cardIndex = previousArray.indexOf(cardObject);
+        
+        console.log(cardObject, cardIndex);
+        previousArray.splice(cardIndex, 1);
     }
+
     cardObject = {
         id: cardId,
         title: cardTitle,
@@ -113,7 +135,7 @@ function saveCard(cardId, cardTitle, cardElement, cardStatus, cardPriority, upda
 
     targetArrayRef.push(cardObject);
     
-    console.info(targetArrayRef, cardIndex, cardObject);
+    console.info(targetArrayRef, cardObject);
 
     // // if not being updated, save
     // if (!update) {
@@ -164,7 +186,9 @@ function moveCardToSection(newCard) {
     targetCardsSection.style.maxHeight = `${targetCardsSection.scrollHeight}px`;
     targetCardsSection.classList.remove('closed-accordion');
 
-    targetCardsSection.parentElement.querySelector('.task-count').innerText = Number(targetCardsSection.querySelector('.task-count')) + 1;
+    const prevCardCount = Number(targetCardsSection.parentElement.querySelector('.task-count').innerText);
+    console.info(prevCardCount);
+    targetCardsSection.parentElement.querySelector('.task-count').innerText = (prevCardCount + 1).toString();
     if (cardPriority.localeCompare('high') === 0) {
         targetCardsSection.parentElement.querySelector('.high-priority-count').innerText = Number(targetCardsSection.querySelector('.high-priority-count')) + 1;
     }
@@ -311,6 +335,47 @@ const filterStatusInput = document.getElementById('task-category-dropdown');
 const filterPriorityInput = document.getElementById('task-priority-dropdown');
 
 function displayFilteredSearchedCards() {
+    
+    todoCardsArray.forEach((element)=> {
 
+        element.node.classList.remove("hide");
+        console.info('hide card', element.node, (!element.title.includes(searchInput.value)));
+        if(!element.title.toUpperCase().includes(searchInput.value.toUpperCase())) {
+            element.node.classList.add('hide');
+        }
+        if (!(element.priority.toUpperCase().includes(filterPriorityInput.value.toUpperCase()))) {
+            element.node.classList.add('hide');
+        }
+        if (!(element.status.toUpperCase().includes(filterStatusInput.value.toUpperCase()))) {
+            element.node.classList.add('hide');
+        }
+    })
 
+    progressCardsArray.forEach((element)=> {
+
+        element.node.classList.remove("hide");
+        if(!element.title.toUpperCase().includes(searchInput.value.toUpperCase())) {
+            element.node.classList.add('hide');
+        }
+        if (!(element.priority.toUpperCase().includes(filterPriorityInput.value.toUpperCase()))) {
+            element.node.classList.add('hide');
+        }
+        if (!(element.status.toUpperCase().includes(filterStatusInput.value.toUpperCase()))) {
+            element.node.classList.add('hide');
+        }
+    })
+
+    completedCardsArray.forEach((element)=> {
+
+        element.node.classList.remove("hide");
+        if(!element.title.toUpperCase().includes(searchInput.value.toUpperCase())) {
+            element.node.classList.add('hide');
+        }
+        if (!(element.priority.toUpperCase().includes(filterPriorityInput.value.toUpperCase()))) {
+            element.node.classList.add('hide');
+        }
+        if (!(element.status.toUpperCase().includes(filterStatusInput.value.toUpperCase()))) {
+            element.node.classList.add('hide');
+        }
+    })
 }
