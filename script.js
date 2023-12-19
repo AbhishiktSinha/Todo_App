@@ -32,10 +32,6 @@ todoAccordionBody.classList.remove("closed-accordion");
 const searchButton = document.querySelector('.search-container >span');
 const filterButton = document.querySelector('.filter-container >span');
 
-// const searchInput = document.getElementById('search-task-input');
-// const filterStatusInput = document.getElementById('task-category-dropdown');
-// const filterPriorityInput = document.getElementById('task-priority-dropdown');
-
 searchButton.addEventListener("click", (event)=> {
     if(searchInput.classList.contains('shrunk')) {
         searchInput.classList.remove('shrunk');

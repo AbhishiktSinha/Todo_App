@@ -14,7 +14,7 @@ createCardForm.addEventListener("submit", (event) => {
 
     const newCard = buildNewCard(createCardForm.card_title.value, createCardForm.due_date.value);
     const cardTitle = createCardForm.card_title.value;
-    console.info(newCard);
+    // console.info(newCard);
 
     const cardstatus = newCard.querySelector(".card-status-dropdown").value;
     const cardPriority = newCard.querySelector(".priority-dropdown").value;
@@ -79,17 +79,13 @@ function buildNewCard(cardTitle, dueDate) {
 
 function saveCard(cardId, cardTitle, cardElement, cardStatus, cardPriority, update) {
 
+    if(completedCardsArray.length === 0) {
+        console.error('deleting from completedCardsArray');
+
+    }
+
     // find the proper placing    
-    let targetArrayRef;
-    if (cardStatus.localeCompare('todo') === 0) {
-        targetArrayRef = todoCardsArray;
-    }
-    else if (cardStatus.localeCompare('in-progress') === 0) {
-        targetArrayRef = progressCardsArray;
-    }
-    else {
-        targetArrayRef = completedCardsArray;
-    }
+    const targetArrayRef = getTargetSectionAndArray(cardStatus).targetArrayRef;
 
     let cardObject;
     let cardIndex;
@@ -97,32 +93,41 @@ function saveCard(cardId, cardTitle, cardElement, cardStatus, cardPriority, upda
     // find if card priority, or status is being updated
     if (update) {
         console.info('updating');
-        
+
         // find the previous status, and previous array of the card
         let previousArray;
 
-        cardObject = todoCardsArray.find((element) => {
-            return (element.id === cardId);
-        })
-        previousArray = todoCardsArray;
-
-        if (!cardObject) {
+        if (cardObject === undefined) {
+            cardObject = todoCardsArray.find((element) => {
+                return (element.id === cardId);
+            })
+            previousArray = todoCardsArray;
+            console.info('deleting from todo array');
+        }
+        if (cardObject === undefined) {
             cardObject = progressCardsArray.find((element) => {
                 return (element.id.localeCompare(cardId) === 0);
             })
             previousArray = progressCardsArray;
+            console.info('deleting from progress array');
         }
-        if (!cardObject) {
-            cardObject = completedCardsArray.find((element)=> {
+        if (cardObject === undefined) {
+            cardObject = completedCardsArray.find((element) => {
                 return (element.id === cardId);
             });
             previousArray = completedCardsArray;
+            console.info('deleting from completed array');
         }
-
+        
         cardIndex = previousArray.indexOf(cardObject);
         
-        console.log(cardObject, cardIndex);
+        console.log(cardObject, cardIndex, previousArray===completedCardsArray);
         previousArray.splice(cardIndex, 1);
+
+        if(completedCardsArray.length === 0) {
+            console.error('deleting from completedCardsArray');
+
+        }
     }
 
     cardObject = {
@@ -134,13 +139,8 @@ function saveCard(cardId, cardTitle, cardElement, cardStatus, cardPriority, upda
     };
 
     targetArrayRef.push(cardObject);
-    
+
     console.info(targetArrayRef, cardObject);
-
-    // // if not being updated, save
-    // if (!update) {
-    // }
-
 
 }
 
@@ -149,37 +149,29 @@ function moveCardToSection(newCard) {
     const cardStatus = newCard.querySelector(".card-status-dropdown").value;
     const cardPriority = newCard.querySelector(".priority-dropdown").value;
     let update = false;
+    let oldParentContainer;
 
     if (document.contains(newCard)) {
 
-        console.info("moving to new section");
+        oldParentContainer = newCard.parentElement.parentElement;
 
-        const oldParentContainer = newCard.parentElement.parentElement;
-        
+
         const prevCards = Number(oldParentContainer.querySelector('.task-count').innerText);
         const prevHighPriorityCards = Number(oldParentContainer.querySelector('.high-priority-count').innerText);
 
-        oldParentContainer.querySelector('.task-count').innerText = prevCards-1;
+        oldParentContainer.querySelector('.task-count').innerText = prevCards - 1;
 
         if (cardPriority.localeCompare('high') === 0) {
-            oldParentContainer.querySelector('.high-priority-count').innerText = prevHighPriorityCards-1;
+            oldParentContainer.querySelector('.high-priority-count').innerText = prevHighPriorityCards - 1;
         }
 
         deleteButtonClicked(newCard.querySelector('.delete-card'), true);
         update = true;
     }
 
-    let targetCardsSection;
-    console.info(cardStatus);
-    if (cardStatus.localeCompare('todo') === 0) {
-        targetCardsSection = todoCardsSection;
-    }
-    else if (cardStatus.localeCompare('in-progress') === 0) {
-        targetCardsSection = progressCardsSection;
-    }
-    else {
-        targetCardsSection = completedCardsSection;
-    }
+    const targetCardsSection = getTargetSectionAndArray(cardStatus).targetCardsSection;
+
+    console.info('moving from',oldParentContainer,'to', targetCardsSection,' : ',cardStatus);
 
     targetCardsSection.querySelector(".task-list-placeholder").classList.add("hide")
     targetCardsSection.appendChild(newCard);
@@ -187,7 +179,7 @@ function moveCardToSection(newCard) {
     targetCardsSection.classList.remove('closed-accordion');
 
     const prevCardCount = Number(targetCardsSection.parentElement.querySelector('.task-count').innerText);
-    console.info(prevCardCount);
+    // console.info(prevCardCount);
     targetCardsSection.parentElement.querySelector('.task-count').innerText = (prevCardCount + 1).toString();
     if (cardPriority.localeCompare('high') === 0) {
         targetCardsSection.parentElement.querySelector('.high-priority-count').innerText = Number(targetCardsSection.querySelector('.high-priority-count')) + 1;
@@ -223,26 +215,32 @@ function manageCardOptions(card) {
                 const finalDeleteButton = card.querySelector('.final-delete');
                 finalDeleteButton.classList.remove('final-delete');
                 finalDeleteButton.classList.add('material-symbols-outlined');
-                finalDeleteButton.innerText = 'delete';                
+                finalDeleteButton.innerText = 'delete';
             }
         }
     })
 
     const cardStatus = card.querySelector(".card-status-dropdown");
-    const cardPriority = card.querySelector(".priority-dropdown");    
+    const cardPriority = card.querySelector(".priority-dropdown");
 
-    cardStatus.addEventListener("change", (event)=> {
+    cardStatus.addEventListener("change", (event) => {
         moveCardToSection(card);
     })
 
-    cardPriority.addEventListener("change", (event)=> {
+    cardPriority.addEventListener("change", (event) => {
         const parentContainer = document.getElementById(`${cardStatus.value}-cards-container`);
-        
+
         const prevHighPriority = Number(parentContainer.querySelector('.high-priority-count').innerText);
 
-        if(cardPriority.value.localeCompare('high')===0) {
+        if (cardPriority.value.localeCompare('high') === 0) {
             parentContainer.querySelector('.high-priority-count').innerText = prevHighPriority + 1;
         }
+
+        const targetArrayRef = getTargetSectionAndArray(cardStatus.value).targetArrayRef;
+        const cardArrayElement = targetArrayRef.find( (element)=> {
+            return (element.id === card.id);
+        });
+        cardArrayElement.priority = cardPriority.value;
     })
 }
 function editButtonClicked(card) {
@@ -285,6 +283,14 @@ function saveButtonClicked(card) {
     displayedDate.textContent = newDate;
     displayedDate.classList.remove("hide");
 
+    // implement changes in the parent array
+    const targetArrayRef = getTargetSectionAndArray(card.querySelector('.card-status-dropdown').value).targetArrayRef;
+    const cardArrayElement = targetArrayRef.find((element)=> {
+        return (element.id === card.id);
+    });
+    cardArrayElement.title = card.querySelector('.card-title').innerText;
+    console.info(cardArrayElement);
+
     // show the edit button 
     card.querySelector(".edit-card-details").classList.remove("hide");
 
@@ -301,6 +307,7 @@ function deleteButtonClicked(deleteButton, finalDelete) {
     else {
         const targetCard = document.getElementById(deleteButton.parentElement.getAttribute('data-for-cardId'));
         const cardParentContainer = targetCard.parentElement;
+        const cardParentAccordion = cardParentContainer.parentElement;
 
         console.info('deleting', targetCard);
 
@@ -311,21 +318,19 @@ function deleteButtonClicked(deleteButton, finalDelete) {
         }
 
         cardStatus = targetCard.querySelector(".card-status-dropdown").value;
-        let targetArrayRef;
-        if (cardStatus.localeCompare('todo') === 0) {
-            targetArrayRef = todoCardsArray;
-        }
-        else if (cardStatus.localeCompare('in-progress')) {
-            targetArrayRef = progressCardsArray;
-        }
-        else {
-            targetArrayRef = completedCardsArray;
-        }
+        let targetArrayRef = getTargetSectionAndArray(cardStatus).targetArrayRef;        
 
         const targetCardIdx = targetArrayRef.findIndex((element) => {
             return (element.id.localeCompare(targetCard.id) === 0);
         });
         targetArrayRef.splice(targetCardIdx, 1);
+
+        // decrease count of cards in the accordion header, check for decrease in high priority cards
+        cardParentAccordion.querySelector('.task-count').innerText = Number(cardParentAccordion.querySelector('.task-count').innerText) - 1;
+
+        if (targetCard.querySelector('.priority-dropdown').value === 'high') {
+            cardParentAccordion.querySelector('.high-priority-count').innerText = Number(cardParentAccordion.querySelector('.high-priority-count').innerText) - 1;
+        }
     }
 }
 
@@ -335,12 +340,13 @@ const filterStatusInput = document.getElementById('task-category-dropdown');
 const filterPriorityInput = document.getElementById('task-priority-dropdown');
 
 function displayFilteredSearchedCards() {
-    
-    todoCardsArray.forEach((element)=> {
+
+    todoCardsArray.forEach((element) => {
 
         element.node.classList.remove("hide");
+        console.info(element.priority);
         console.info('hide card', element.node, (!element.title.includes(searchInput.value)));
-        if(!element.title.toUpperCase().includes(searchInput.value.toUpperCase())) {
+        if (!element.title.toUpperCase().includes(searchInput.value.toUpperCase())) {
             element.node.classList.add('hide');
         }
         if (!(element.priority.toUpperCase().includes(filterPriorityInput.value.toUpperCase()))) {
@@ -351,10 +357,11 @@ function displayFilteredSearchedCards() {
         }
     })
 
-    progressCardsArray.forEach((element)=> {
+    progressCardsArray.forEach((element) => {
 
         element.node.classList.remove("hide");
-        if(!element.title.toUpperCase().includes(searchInput.value.toUpperCase())) {
+        console.info(element.priority);
+        if (!element.title.toUpperCase().includes(searchInput.value.toUpperCase())) {
             element.node.classList.add('hide');
         }
         if (!(element.priority.toUpperCase().includes(filterPriorityInput.value.toUpperCase()))) {
@@ -365,10 +372,11 @@ function displayFilteredSearchedCards() {
         }
     })
 
-    completedCardsArray.forEach((element)=> {
+    completedCardsArray.forEach((element) => {
 
         element.node.classList.remove("hide");
-        if(!element.title.toUpperCase().includes(searchInput.value.toUpperCase())) {
+        console.info(element.priority);
+        if (!element.title.toUpperCase().includes(searchInput.value.toUpperCase())) {
             element.node.classList.add('hide');
         }
         if (!(element.priority.toUpperCase().includes(filterPriorityInput.value.toUpperCase()))) {
@@ -378,4 +386,25 @@ function displayFilteredSearchedCards() {
             element.node.classList.add('hide');
         }
     })
+}
+
+
+function getTargetSectionAndArray(cardStatus) {
+    let targetCardsSection, targetArrayRef;
+
+    if (cardStatus.localeCompare('todo') === 0) {
+        targetCardsSection = todoCardsSection;
+        targetArrayRef = todoCardsArray;
+    }
+    else if (cardStatus.localeCompare('in-progress') === 0) {
+        targetCardsSection = progressCardsSection;
+        targetArrayRef = progressCardsArray;
+    }
+    else {
+        targetCardsSection = completedCardsSection;
+        targetArrayRef = completedCardsArray;
+    }
+    console.info('target: ',targetCardsSection, targetArrayRef);
+
+    return { targetCardsSection, targetArrayRef };
 }

@@ -42,6 +42,7 @@ header {
         /* flex-grow: 1; */
 
         position: absolute;
+        right: 50%;
         left: 50%;
 
         display: flex;
@@ -70,13 +71,13 @@ header {
 .search-and-filter-container {    
     display: flex;    
     align-items: center;
-    column-gap: 12px;
+    column-gap: 8px;
     
     >.search-container {
         display: flex;  
         align-items: center;      
         padding-inline: 4px;
-        column-gap: 12px;
+        column-gap: 4px;
         
         >span {
             width:30px;
@@ -93,7 +94,7 @@ header {
         }
         
         >input {
-            width: 150px;
+            width: 120px;
             border: none;
             transition: 0.4s;
 
@@ -130,7 +131,7 @@ header {
             display: flex;
             align-items: center;
 
-            column-gap: 12px;
+            column-gap: 4%;
 
             >.dropdown-wrapper select{
                 border: none;
@@ -163,7 +164,8 @@ header {
         display: flex;
         align-items: center;
         justify-content: center;
-        column-gap: 12px;        
+        column-gap: 12px;
+    
 
         >button {
             display: flex;
